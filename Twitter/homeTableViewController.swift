@@ -7,13 +7,15 @@
 //
 
 import UIKit
+import AlamofireImage
+import Alamofire
 
 class homeTableViewController: UITableViewController {
 
     var tweetArray = [NSDictionary]()
-    var numOfTweets: Int!
+    var numOfTweets = 20
     
-    
+    let myRefreshControl = UIRefreshControl()
     
     @IBAction func onLogout(_ sender: Any) {
         TwitterAPICaller.client?.logout()
@@ -25,13 +27,15 @@ class homeTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadTweets()
-
+        myRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
+        tableView.refreshControl = myRefreshControl
     }
 
     
-    func loadTweets(){
+    @objc func loadTweets(){
+        let numOfTweets = 20
         let myUrl = "https://api.twitter.com/1.1/statuses/home_timeline.json"
-        let myParams = ["count": 10]
+        let myParams = ["count": numOfTweets]
         
         TwitterAPICaller.client?.getDictionariesRequest(url: myUrl, parameters: myParams, success: { (tweets: [NSDictionary]) in
             
@@ -40,10 +44,38 @@ class homeTableViewController: UITableViewController {
                 self.tweetArray.append(t)
             }
             self.tableView.reloadData()
+            self.myRefreshControl.endRefreshing()
         
         }, failure: { (Error) in
             print(Error.localizedDescription)
+            print(Error.self)
         })
+    }
+    
+    func loadMoreTweets(){
+        let myUrl = "https://api.twitter.com/1.1/statuses/home_timeline.json"
+        numOfTweets = numOfTweets + 20
+        let myParams = ["count": numOfTweets]
+        
+        TwitterAPICaller.client?.getDictionariesRequest(url: myUrl, parameters: myParams, success: { (tweets: [NSDictionary]) in
+            
+            self.tweetArray.removeAll()
+            for t in tweets{
+                self.tweetArray.append(t)
+            }
+            self.tableView.reloadData()
+            
+        }, failure: { (Error) in
+            print(Error.localizedDescription)
+            print(Error.self)
+        })
+        
+    }
+    
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row + 1 == tweetArray.count{
+            loadMoreTweets()
+        }
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -53,6 +85,15 @@ class homeTableViewController: UITableViewController {
         
         cell.userNameLabel.text = user["name"] as? String
         cell.tweetContent.text = tweetArray[indexPath.row]["text"] as? String
+        
+        let imageUrl = URL(string: (user["profile_image_url_https"] as? String)!)
+        let data = try? Data(contentsOf: imageUrl!)
+        
+        if let imageData = data {
+            cell.profileImageView.image = UIImage(data: imageData)
+        }
+        
+        
         return cell
     }
     
