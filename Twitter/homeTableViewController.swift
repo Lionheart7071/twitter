@@ -26,14 +26,15 @@ class homeTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadTweets()
         myRefreshControl.addTarget(self, action: #selector(loadTweets), for: .valueChanged)
         tableView.refreshControl = myRefreshControl
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 150
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        self.loadTweets()
+        loadTweets()
     }
 
     
@@ -98,6 +99,9 @@ class homeTableViewController: UITableViewController {
             cell.profileImageView.image = UIImage(data: imageData)
         }
         
+        cell.setFav(tweetArray[indexPath.row]["favorited"] as! Bool)
+        cell.tweetID = tweetArray[indexPath.row]["id"] as! Int
+        cell.setRetweet(tweetArray[indexPath.row]["retweeted"] as! Bool)
         
         return cell
     }
@@ -114,7 +118,14 @@ class homeTableViewController: UITableViewController {
         // #warning Incomplete implementation, return the number of rows
         return tweetArray.count
     }
-
-
-
+/*
+    func getRelativeTime(timeString: String) -> String{
+        let time: Date
+        let DateFormat = DateFormatter()
+        DateFormat.dateFormat = "EEE MMM d HH:mm:ss Z y"
+        time = DateFormat.date(from: timeString)!
+        return time.timeAgoDisplay()
+    }
+*/
+    
 }
